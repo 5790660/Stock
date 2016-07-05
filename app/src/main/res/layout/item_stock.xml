@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:padding="5dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+        <ImageView
+            android:src="@mipmap/ic_stock_halt"
+            android:id="@+id/ivStockTrend"
+            android:layout_margin="1dp"
+            android:layout_width="15dp"
+            android:layout_height="15dp" />
+
+        <TextView
+            android:id="@+id/tvStockName"
+            android:textSize="12sp"
+            android:layout_margin="1dp"
+            android:textColor="@android:color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:text="--/--"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:layout_margin="1dp"
+            android:id="@+id/tvPxChangeRate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+</LinearLayout>
