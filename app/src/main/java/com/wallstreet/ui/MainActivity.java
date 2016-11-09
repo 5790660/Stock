@@ -1,9 +1,7 @@
 package com.wallstreet.ui;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -25,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,11 +30,22 @@ public class MainActivity extends AppCompatActivity {
     //刷新间隔
     private static final int REFRESH_TIME = 2000;
 
-    private MessageListAdapter adapter;
+    private MessageListAdapter adapter = new MessageListAdapter(this);
 
     private LinearLayoutManager mLayoutManager;
 
     private List<Message> messages = new ArrayList<>();
+
+    private Handler handler = new Handler();
+
+    private Boolean isUpdate = true;
+
+    private Runnable updateListTask = new Runnable() {
+        @Override
+        public void run() {
+            adapter.updateData(messages);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,117 +55,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void initView() {
-        try {
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        mLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        recyclerView.setAdapter(adapter);
+        recyclerView.setLayoutManager(mLayoutManager);
 
-            SwipeRefreshLayout mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
-            mSwipeRefreshLayout.setOnRefreshListener(refreshListener);
-            RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-            adapter = new MessageListAdapter(this);
-            mLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-            recyclerView.setHasFixedSize(true);
-            recyclerView.setAdapter(adapter);
-            recyclerView.setLayoutManager(mLayoutManager);
-//            recyclerView.addOnScrollListener(scrollListener);
+        messages = getJsonList();
+        adapter.updateData(messages);
 
-            messages = getJsonList();
-            adapter.updateData(messages);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // TODO: 7/2/2016  handler需延迟一段时间后执行 否则layoutManager.findFirstVisibleItemPosition会返回NO_POSITION
-        handler.postDelayed(runnable, 100);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                getStocksFromNet();
+            }
+        }).start();
     }
 
-
-
-    //利用postDelayed实现定时刷新
-    Handler handler = new Handler();
-    Runnable runnable = new Runnable() {
-
-        @Override
-        public void run() {
+    /**
+     * 获取实时股票信息
+     */
+    public void getStocksFromNet(){
+        while (HttpUtils.IsNetAvailable(MainActivity.this) && isUpdate){
             try {
-                //检查网络状态
-                if ( ! HttpUtils.IsNetAvailable(MainActivity.this))
-                    return;
+                Thread.sleep(REFRESH_TIME);
+
                 //获取当前可视区域的股票代码
                 String strUrl = HttpUtils.URL_STOCK_REAL + "?en_prod_code=";
                 int start = mLayoutManager.findFirstVisibleItemPosition();
                 int end = start + mLayoutManager.getChildCount();
-                for (int i = start; i < end; i ++) {
+                for (int i = start; i < end; i++) {
                     for (Stock stock : messages.get(i).getStocks()) {
                         strUrl += stock.getSymbol() + ",";
                     }
                 }
                 strUrl += "&fields=prod_name,px_change,last_px,px_change_rate,trade_status";
-                new RefreshStockTask(start, end).execute(strUrl);
-                handler.postDelayed(this, REFRESH_TIME);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    };
+                List<Stock> stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(strUrl), HSJsonUtil.JSON_OBJECT_NAME);
 
-    //下拉刷新监听器
-    SwipeRefreshLayout.OnRefreshListener refreshListener = new SwipeRefreshLayout.OnRefreshListener() {
-        @Override
-        public void onRefresh() {
-            initiateRefresh();
-        }
-    };
-
-    //继承AsyncTask类，获取实时股票走势
-    private class RefreshStockTask extends AsyncTask<String, Void, List<Stock>> {
-
-        int start;
-        int end;
-
-        public RefreshStockTask(int start, int end) {
-            this.start = start;
-            this.end = end;
-        }
-
-        @Override
-        protected List<Stock> doInBackground(String... params) {
-            List<Stock> stocks = new ArrayList<>();
-            try {
-                stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(params[0]), HSJsonUtil.JSON_OBJECT_NAME);
-                for (Stock stock : stocks) {
-                    Log.i(stock.getSymbol(), stock.getPx_change_rate());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return stocks;
-        }
-
-        @Override
-        protected void onPostExecute(List<Stock> items) {
-            super.onPostExecute(items);
-
-            int size = items.size();
-
-            for (int i = start; i < end; i ++) {
-                int mSize = messages.get(i).getStocks().size();
-                List<Stock> stocks = new ArrayList<>();
-                for (int j = 0; j < mSize; j ++) {
-                    for (int k = 0; k < size; k ++) {
-                        if (messages.get(i).getStocks().get(j).getSymbol().equals(items.get(k).getSymbol())) {
-                            stocks.add(items.get(k));
+                int size = stocks.size();
+                for (int i = start; i < end; i++) {
+                    int mSize = messages.get(i).getStocks().size();
+                    List<Stock> items = new ArrayList<>();
+                    for (int j = 0; j < mSize; j++) {
+                        for (int k = 0; k < size; k++) {
+                            if (messages.get(i).getStocks().get(j).getSymbol().equals(stocks.get(k).getSymbol())) {
+                                items.add(stocks.get(k));
+                            }
                         }
                     }
+                    messages.get(i).setStocks((ArrayList<Stock>) items);
                 }
-                messages.get(i).setStocks((ArrayList<Stock>) stocks);
+                handler.post(updateListTask);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            adapter.updateData(messages);
-//            adapter.updateStockView(items, start);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        isUpdate = true;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        handler.removeCallbacks(runnable);
+        isUpdate = false;
     }
 
     /**
@@ -168,7 +131,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             JSONObject jsonObject = new JSONObject(getRawJsonData());
             JSONArray jsonArray=new JSONArray(jsonObject.getString("Messages"));
-            Log.i("jsonArray",jsonArray.length()+"");
             for(int i = 0 ; i < jsonArray.length() ; i++) {
                 JSONObject json = jsonArray.getJSONObject(i);
                 Message message = new Message();
@@ -210,15 +172,10 @@ public class MainActivity extends AppCompatActivity {
             while (null != (line = reader.readLine())) {
                 result += line;
             }
-            System.out.println(result);
             return result;
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public void  initiateRefresh() {
-
     }
 }

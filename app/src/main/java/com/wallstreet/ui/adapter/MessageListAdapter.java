@@ -58,6 +58,9 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         for (Stock stock : items) {
             View view = LayoutInflater.from(mContext)
                     .inflate(R.layout.item_stock, null, false);
+//            System.out.println(stock.getSymbol());
+//            view.setId(Integer.valueOf(stock.getSymbol()));
+
             ImageView ivStockTrend = (ImageView) view.findViewById(R.id.ivStockTrend);
             TextView tvStockName = (TextView) view.findViewById(R.id.tvStockName);
             TextView tvPxChangeRate = (TextView) view.findViewById(R.id.tvPxChangeRate);
@@ -84,6 +87,7 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 nf.setMaximumFractionDigits(2);//保留两位小数
                 tvPxChangeRate.setText(nf.format(rate / 100));
             }
+//            System.out.println(stock.getName() + " " + view.getId());
             listViewHolder.layoutStock.addView(view);
         }
     }
@@ -98,12 +102,6 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             mValues = items;
             notifyDataSetChanged();
         }
-    }
-
-    //此更新单个item方法会出现闪烁现象，已弃用
-    public void updateStockView(List<Stock> items, int pos) {
-        mValues.get(pos).setStocks((ArrayList<Stock>) items);
-        notifyItemChanged(pos);
     }
 
     public class ListViewHolder extends ViewHolder {
