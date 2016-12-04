@@ -1,10 +1,7 @@
-package com.wallstreet.ui.layout;
+package com.wallstreet.ui.View;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -12,20 +9,20 @@ import android.view.ViewGroup;
  * Created by 创宇 on 7/2/2016.
  * 可自动换行的股票布局
  */
-public class StockLayout extends ViewGroup{
+public class StockView extends ViewGroup{
 
     //每行显示的股票数量
     public static final int NUM_PER_LINE = 3;
 
-    public StockLayout(Context context) {
+    public StockView(Context context) {
         super(context);
     }
 
-    public StockLayout(Context context, AttributeSet attrs) {
+    public StockView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public StockLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public StockView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

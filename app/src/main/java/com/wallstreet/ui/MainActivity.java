@@ -2,6 +2,7 @@ package com.wallstreet.ui;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -30,6 +31,8 @@ public class MainActivity extends AppCompatActivity {
     //刷新间隔
     private static final int REFRESH_TIME = 2000;
 
+    private static final int UPDATE_STOCK= 1;
+
     private MessageListAdapter adapter = new MessageListAdapter(this);
 
     private LinearLayoutManager mLayoutManager;
@@ -38,44 +41,47 @@ public class MainActivity extends AppCompatActivity {
 
     private Handler handler = new Handler();
 
-    private Boolean isUpdate = true;
+    private Handler checkMsgHandler;
 
-    private Runnable updateListTask = new Runnable() {
-        @Override
-        public void run() {
-            adapter.updateData(messages);
-        }
-    };
+    private HandlerThread checkMsgThread;
+
+    private Boolean isUpdate = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initView();
+        initThread();
     }
 
     public void initView() {
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
-        recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.setAdapter(adapter);
 
         messages = getJsonList();
         adapter.updateData(messages);
+    }
 
-        new Thread(new Runnable() {
+    public void initThread() {
+        checkMsgThread = new HandlerThread("check-message");
+        checkMsgThread.start();
+        checkMsgHandler = new Handler(checkMsgThread.getLooper()){
             @Override
-            public void run() {
+            public void handleMessage(android.os.Message msg) {
+                super.handleMessage(msg);
                 getStocksFromNet();
             }
-        }).start();
+        };
     }
 
     /**
      * 获取实时股票信息
      */
     public void getStocksFromNet(){
-        while (HttpUtils.IsNetAvailable(MainActivity.this) && isUpdate){
+        while (isUpdate){
             try {
                 Thread.sleep(REFRESH_TIME);
 
@@ -104,7 +110,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                     messages.get(i).setStocks((ArrayList<Stock>) items);
                 }
-                handler.post(updateListTask);
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getTaskId();
+                        adapter.updateData(messages);
+                    }
+                });
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -115,12 +127,20 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         isUpdate = true;
+        checkMsgHandler.sendEmptyMessage(UPDATE_STOCK);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         isUpdate = false;
+        checkMsgHandler.removeMessages(UPDATE_STOCK);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        checkMsgThread.quit();
     }
 
     /**

@@ -13,7 +13,7 @@ import android.widget.TextView;
 import com.wallstreet.R;
 import com.wallstreet.bean.Message;
 import com.wallstreet.bean.Stock;
-import com.wallstreet.ui.layout.StockLayout;
+import com.wallstreet.ui.View.StockView;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -53,13 +53,13 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
 
         //StockLayout加载View
-        listViewHolder.layoutStock.removeAllViews();
+        listViewHolder.stockView.removeAllViews();
+//        System.out.println("pos "+ pos + " count " + listViewHolder.stockView.getChildCount());
         List<Stock> items = mValues.get(pos).getStocks();
         for (Stock stock : items) {
             View view = LayoutInflater.from(mContext)
                     .inflate(R.layout.item_stock, null, false);
 //            System.out.println(stock.getSymbol());
-//            view.setId(Integer.valueOf(stock.getSymbol()));
 
             ImageView ivStockTrend = (ImageView) view.findViewById(R.id.ivStockTrend);
             TextView tvStockName = (TextView) view.findViewById(R.id.tvStockName);
@@ -87,8 +87,7 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 nf.setMaximumFractionDigits(2);//保留两位小数
                 tvPxChangeRate.setText(nf.format(rate / 100));
             }
-//            System.out.println(stock.getName() + " " + view.getId());
-            listViewHolder.layoutStock.addView(view);
+            listViewHolder.stockView.addView(view);
         }
     }
 
@@ -111,13 +110,13 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         public final TextView tvSummary;
         public final TextView tvLikeCount;
         public final TextView tvCreatedAtAndSource;
-        public final StockLayout layoutStock;
+        public final StockView stockView;
         public Message mItem;
 
         public ListViewHolder(View view) {
             super(view);
             mView = view;
-            layoutStock = (StockLayout) view.findViewById(R.id.layoutStock);
+            stockView = (StockView) view.findViewById(R.id.layoutStock);
             tvTitle = (TextView) view.findViewById(R.id.tvTitle);
             tvSummary = (TextView) view.findViewById(R.id.tvSummary);
             tvLikeCount = (TextView) view.findViewById(R.id.tvLikeCount);
