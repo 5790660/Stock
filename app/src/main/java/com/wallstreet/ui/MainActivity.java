@@ -83,8 +83,6 @@ public class MainActivity extends AppCompatActivity {
     public void getStocksFromNet(){
         while (isUpdate){
             try {
-                Thread.sleep(REFRESH_TIME);
-
                 //获取当前可视区域的股票代码
                 String strUrl = HttpUtils.URL_STOCK_REAL + "?en_prod_code=";
                 int start = mLayoutManager.findFirstVisibleItemPosition();
@@ -95,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 strUrl += "&fields=prod_name,px_change,last_px,px_change_rate,trade_status";
+                System.out.println(strUrl);
+                System.out.println(Thread.currentThread().getId());
                 List<Stock> stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(strUrl), HSJsonUtil.JSON_OBJECT_NAME);
 
                 int size = stocks.size();
@@ -113,10 +113,11 @@ public class MainActivity extends AppCompatActivity {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        getTaskId();
+                        System.out.println(Thread.currentThread().getId());
                         adapter.updateData(messages);
                     }
                 });
+                Thread.sleep(REFRESH_TIME);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -127,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         isUpdate = true;
-        checkMsgHandler.sendEmptyMessage(UPDATE_STOCK);
+        checkMsgHandler.sendEmptyMessageDelayed(UPDATE_STOCK, 100);
     }
 
     @Override
