@@ -93,10 +93,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 strUrl += "&fields=prod_name,px_change,last_px,px_change_rate,trade_status";
-                System.out.println(strUrl);
-                System.out.println(Thread.currentThread().getId());
                 List<Stock> stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(strUrl), HSJsonUtil.JSON_OBJECT_NAME);
-
                 int size = stocks.size();
                 for (int i = start; i < end; i++) {
                     int mSize = messages.get(i).getStocks().size();
@@ -113,7 +110,6 @@ public class MainActivity extends AppCompatActivity {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        System.out.println(Thread.currentThread().getId());
                         adapter.updateData(messages);
                     }
                 });
