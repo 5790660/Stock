@@ -6,7 +6,6 @@ import android.os.HandlerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 
 import com.wallstreet.R;
 import com.wallstreet.bean.Message;
@@ -26,12 +25,15 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity {
 
     //刷新间隔
-    private static final int REFRESH_TIME = 2000;
+    private static final int REFRESH_TIME = 1000;
 
-    private static final int UPDATE_STOCK= 1;
+    private static final int UPDATE_STOCK = 1;
 
     private MessageListAdapter adapter = new MessageListAdapter(this);
 
@@ -39,24 +41,25 @@ public class MainActivity extends AppCompatActivity {
 
     private List<Message> messages = new ArrayList<>();
 
-    private Handler handler = new Handler();
-
     private Handler checkMsgHandler;
 
     private HandlerThread checkMsgThread;
 
     private Boolean isUpdate = true;
 
+    @BindView(R.id.recycler_view)
+    RecyclerView recyclerView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         initView();
         initThread();
     }
 
     public void initView() {
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         mLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setAdapter(adapter);
@@ -107,10 +110,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                     messages.get(i).setStocks((ArrayList<Stock>) items);
                 }
-                handler.post(new Runnable() {
+                recyclerView.post(new Runnable() {
                     @Override
                     public void run() {
-                        adapter.updateData(messages);
+                        if (recyclerView.getScrollState() == RecyclerView.SCROLL_STATE_IDLE)
+                            adapter.updateData(messages);
                     }
                 });
                 Thread.sleep(REFRESH_TIME);
@@ -124,7 +128,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         isUpdate = true;
-        checkMsgHandler.sendEmptyMessageDelayed(UPDATE_STOCK, 100);
+        recyclerView.post(new Runnable() {
+            @Override
+            public void run() {
+                checkMsgHandler.sendEmptyMessage(UPDATE_STOCK);
+            }
+        });
     }
 
     @Override
@@ -142,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * 获取本地JSON的数据
+     * @return Message列表
      */
     public List<Message> getJsonList() {
         List<Message> messages = new ArrayList<>();

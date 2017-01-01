@@ -22,6 +22,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<Message> mValues = new ArrayList<>();
@@ -54,12 +57,10 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
         //StockLayout加载View
         listViewHolder.stockView.removeAllViews();
-//        System.out.println("pos "+ pos + " count " + listViewHolder.stockView.getChildCount());
         List<Stock> items = mValues.get(pos).getStocks();
         for (Stock stock : items) {
             View view = LayoutInflater.from(mContext)
                     .inflate(R.layout.item_stock, null, false);
-//            System.out.println(stock.getSymbol());
 
             ImageView ivStockTrend = (ImageView) view.findViewById(R.id.ivStockTrend);
             TextView tvStockName = (TextView) view.findViewById(R.id.tvStockName);
@@ -103,33 +104,30 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
-    public class ListViewHolder extends ViewHolder {
+    class ListViewHolder extends ViewHolder {
 
-        public final View mView;
-        public final TextView tvTitle;
-        public final TextView tvSummary;
-        public final TextView tvLikeCount;
-        public final TextView tvCreatedAtAndSource;
-        public final StockView stockView;
-        public Message mItem;
+        @BindView(R.id.tvTitle)
+        TextView tvTitle;
+        @BindView(R.id.tvSummary)
+        TextView tvSummary;
+        @BindView(R.id.tvLikeCount)
+        TextView tvLikeCount;
+        @BindView(R.id.tvCreatedAtAndSource)
+        TextView tvCreatedAtAndSource;
+        @BindView(R.id.layoutStock)
+        StockView stockView;
+        Message mItem;
 
-        public ListViewHolder(View view) {
+        ListViewHolder(View view) {
             super(view);
-            mView = view;
-            stockView = (StockView) view.findViewById(R.id.layoutStock);
-            tvTitle = (TextView) view.findViewById(R.id.tvTitle);
-            tvSummary = (TextView) view.findViewById(R.id.tvSummary);
-            tvLikeCount = (TextView) view.findViewById(R.id.tvLikeCount);
-            tvCreatedAtAndSource = (TextView) view.findViewById(R.id.tvCreatedAtAndSource);
-        }
-
-        @Override
-        public String toString() {
-            return super.toString() + " '" + tvTitle.getText() + "'";
+            ButterKnife.bind(this, view);
         }
     }
 
-    //日期的相关处理 今天、昨天
+    /**
+     *日期的相关处理
+     * @return 今天、昨天 某月某日
+    */
     private String getTime(Date date) {
         String todySDF = "HH:mm";
         String yesterDaySDF = "昨天 HH:mm";

@@ -3,13 +3,9 @@ package com.wallstreet.util;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -27,26 +23,22 @@ public class HttpUtils {
      * @param strUrl    URL地址
      * @return  服务器返回的数据
      */
-    public static String doGet(String strUrl) throws Exception
-    {
+    public static String doGet(String strUrl) throws Exception {
         if (strUrl == ""){
             return null;
         }
-        URL url;
         HttpURLConnection conn = null;
         InputStream is = null;
         ByteArrayOutputStream baos = null;
-        try
-        {
-            url = new URL(strUrl);
+        try {
+            URL url = new URL(strUrl);
             conn = (HttpURLConnection) url.openConnection();
             conn.setReadTimeout(TIMEOUT_IN_MILLIONS);
             conn.setConnectTimeout(TIMEOUT_IN_MILLIONS);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("accept", "*/*");
             conn.setRequestProperty("connection", "Keep-Alive");
-            if (conn.getResponseCode() == 200)
-            {
+            if (conn.getResponseCode() == 200) {
                 is = conn.getInputStream();
                 baos = new ByteArrayOutputStream();
                 int len = -1;
@@ -58,40 +50,32 @@ public class HttpUtils {
                 }
                 baos.flush();
                 return baos.toString();
-            } else
-            {
+            } else {
                 throw new RuntimeException(" responseCode is not 200 ... ");
             }
-
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
-
-        } finally
-        {
-            try
-            {
+        } finally {
+            try {
                 if (is != null)
                     is.close();
-            } catch (IOException e)
-            {
-            }
-            try
-            {
+            } catch (IOException e) {
+            } try {
                 if (baos != null)
                     baos.close();
-            } catch (IOException e)
-            {
+            } catch (IOException e) {
+            } try {
+                if (conn != null)
+                    conn.disconnect();
+            } catch (Exception e) {
             }
-            conn.disconnect();
         }
-
         return null ;
     }
 
     /**
      * 当前是否有网络连接
-     * @return
+     * @return True or False
      */
     public static boolean IsNetAvailable(Context context){
         ConnectivityManager connectivityManager =
