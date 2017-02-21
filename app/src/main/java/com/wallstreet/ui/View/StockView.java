@@ -2,6 +2,7 @@ package com.wallstreet.ui.View;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
 

@@ -20,7 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -28,9 +30,16 @@ import butterknife.ButterKnife;
 public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<Message> mValues = new ArrayList<>();
+
+    private Map<String, Stock> stockMap = new HashMap<>();
+
     private Context mContext;
 
-    public MessageListAdapter(Context context) {
+    public MessageListAdapter(List<Message> items, Context context) {
+        if (items != null) {
+            mValues = items;
+            notifyDataSetChanged();
+        }
         mContext = context;
     }
 
@@ -55,12 +64,16 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             listViewHolder.tvCreatedAtAndSource.append(" 来自 " + mValues.get(pos).getSource());
         }
 
-        //StockLayout加载View
         listViewHolder.stockView.removeAllViews();
+
         List<Stock> items = mValues.get(pos).getStocks();
+
         for (Stock stock : items) {
-            View view = LayoutInflater.from(mContext)
-                    .inflate(R.layout.item_stock, null, false);
+             View view = LayoutInflater.from(mContext)
+                     .inflate(R.layout.item_stock, null, false);
+
+            if (stockMap.containsKey(stock.getSymbol()))
+                stock = stockMap.get(stock.getSymbol());
 
             ImageView ivStockTrend = (ImageView) view.findViewById(R.id.ivStockTrend);
             TextView tvStockName = (TextView) view.findViewById(R.id.tvStockName);
@@ -68,7 +81,7 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
             tvStockName.setText(stock.getName());
 
             if (stock.getPx_change_rate() != null) {
-                Double rate= Double.valueOf(stock.getPx_change_rate());
+                Double rate = Double.valueOf(stock.getPx_change_rate());
 
                 if (rate > 0) {
                     ivStockTrend.setImageResource(R.mipmap.ic_stock_up);
@@ -87,8 +100,9 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                 NumberFormat nf = NumberFormat.getPercentInstance();
                 nf.setMaximumFractionDigits(2);//保留两位小数
                 tvPxChangeRate.setText(nf.format(rate / 100));
+
+                listViewHolder.stockView.addView(view);
             }
-            listViewHolder.stockView.addView(view);
         }
     }
 
@@ -97,11 +111,12 @@ public class MessageListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         return mValues.size();
     }
 
-    public void updateData(List<Message> items) {
-        if (items != null) {
-            mValues = items;
-            notifyDataSetChanged();
-        }
+    int sum =0;
+
+    public void updateStockInfo(List<Stock> stocks) {
+        System.out.println(sum++);
+        for (Stock stock : stocks)
+            stockMap.put(stock.getSymbol(), stock);
     }
 
     class ListViewHolder extends ViewHolder {

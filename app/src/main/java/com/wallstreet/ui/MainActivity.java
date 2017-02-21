@@ -31,11 +31,11 @@ import butterknife.ButterKnife;
 public class MainActivity extends AppCompatActivity {
 
     //刷新间隔
-    private static final int REFRESH_TIME = 1000;
+    private static final int REFRESH_TIME = 2000;
 
     private static final int UPDATE_STOCK = 1;
 
-    private MessageListAdapter adapter = new MessageListAdapter(this);
+    private MessageListAdapter adapter;
 
     private LinearLayoutManager mLayoutManager;
 
@@ -60,12 +60,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void initView() {
+        messages = getJsonList();
+        adapter = new MessageListAdapter(messages, this);
+
         mLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setAdapter(adapter);
-
-        messages = getJsonList();
-        adapter.updateData(messages);
     }
 
     public void initThread() {
@@ -88,33 +88,24 @@ public class MainActivity extends AppCompatActivity {
             try {
                 //获取当前可视区域的股票代码
                 String strUrl = HttpUtils.URL_STOCK_REAL + "?en_prod_code=";
-                int start = mLayoutManager.findFirstVisibleItemPosition();
-                int end = start + mLayoutManager.getChildCount();
+//                int start = mLayoutManager.findFirstVisibleItemPosition();
+//                int end = start + mLayoutManager.getChildCount();
+                int start = 0;
+                int end = messages.size();
                 for (int i = start; i < end; i++) {
                     for (Stock stock : messages.get(i).getStocks()) {
                         strUrl += stock.getSymbol() + ",";
                     }
                 }
                 strUrl += "&fields=prod_name,px_change,last_px,px_change_rate,trade_status";
-                List<Stock> stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(strUrl), HSJsonUtil.JSON_OBJECT_NAME);
-                int size = stocks.size();
-                for (int i = start; i < end; i++) {
-                    int mSize = messages.get(i).getStocks().size();
-                    List<Stock> items = new ArrayList<>();
-                    for (int j = 0; j < mSize; j++) {
-                        for (int k = 0; k < size; k++) {
-                            if (messages.get(i).getStocks().get(j).getSymbol().equals(stocks.get(k).getSymbol())) {
-                                items.add(stocks.get(k));
-                            }
-                        }
-                    }
-                    messages.get(i).setStocks((ArrayList<Stock>) items);
-                }
+                List<Stock> stocks = HSJsonUtil.getRealStockList(HttpUtils.doGet(strUrl)
+                        , HSJsonUtil.JSON_OBJECT_NAME);
+                adapter.updateStockInfo(stocks);
                 recyclerView.post(new Runnable() {
                     @Override
                     public void run() {
                         if (recyclerView.getScrollState() == RecyclerView.SCROLL_STATE_IDLE)
-                            adapter.updateData(messages);
+                            adapter.notifyDataSetChanged();
                     }
                 });
                 Thread.sleep(REFRESH_TIME);
